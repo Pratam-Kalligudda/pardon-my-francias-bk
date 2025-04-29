@@ -22,11 +22,11 @@ func (r *Repo) AddUser(user models.User) {
 	fmt.Println("Get Users:", users)
 }
 
-func (r *Repo) GetPassword(email string) string {
+func (r *Repo) GetUser(keyword string, value string) []models.User {
 	var users []models.User
-	r.DB.Find(&users, "email", email)
+	r.DB.Find(&users, keyword, value)
 	if len(users) == 0 {
-		return ""
+		return nil
 	}
-	return users[0].Password
+	return users
 }

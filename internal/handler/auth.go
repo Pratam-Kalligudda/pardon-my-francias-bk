@@ -25,22 +25,24 @@ func (h *Handler) SignUp(c echo.Context) error {
 		return err
 	}
 
-	if err := h.service.CreateUser(user); err != nil {
-		return err
+	token, err := h.service.CreateUser(user)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, JSON{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusCreated, JSON{"message": "Created Successfully"})
+	return c.JSON(http.StatusCreated, JSON{"message": "Created Successfully", "token": token})
 }
 
 func (h *Handler) SignIn(c echo.Context) error {
 	user := new(models.User)
 
 	if err := c.Bind(&user); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, JSON{"error": err.Error()})
 	}
 
-	if err := h.service.LoginUser(user.Email, user.Password); err != nil {
-		return err
+	token, err := h.service.LoginUser(user.Email, user.Password)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, JSON{"error": err.Error()})
 	}
-	return c.JSON(http.StatusOK, JSON{"message": "Logged in Successfully"})
+	return c.JSON(http.StatusOK, JSON{"message": "Logged in Successfully", "token": token})
 }

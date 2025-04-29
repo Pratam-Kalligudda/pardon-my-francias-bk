@@ -1,8 +1,12 @@
 package services
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/Pratam-Kalligudda/pardon-my-francias-bk/internal/repo"
 	"github.com/Pratam-Kalligudda/pardon-my-francias-bk/models"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -15,25 +19,48 @@ func NewService(repo *repo.Repo) Service {
 	return Service{repo}
 }
 
-func (s Service) CreateUser(user *models.User) error {
+func (s Service) CreateUser(user *models.User) (string, error) {
+	users := s.Repo.GetUser("email", user.Email)
+	if len(users) != 0 {
+		return "", fmt.Errorf("email already exists")
+	}
+	users = nil
+	users = s.Repo.GetUser("user_name", user.UserName)
+	if len(users) != 0 {
+		return "", fmt.Errorf("username already exists")
+	}
 	user.UserId = GenerateUserID()
 	hashPass, err := GenerateHashPassword(user.Password)
 	if err != nil {
-		return err
+		return "", err
 	}
 	user.Password = hashPass
 
 	s.Repo.AddUser(*user)
 
-	return nil
+	token, err := GenerateJWTToken(user.UserId, user.UserName)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
 
-func (s Service) LoginUser(email, password string) error {
-	hashPass := s.Repo.GetPassword(email)
-	if err := ComparePassword(hashPass, password); err != nil {
-		return err
+func (s Service) LoginUser(email, password string) (string, error) {
+	users := s.Repo.GetUser("email", email)
+	if len(users) > 1 || len(users) == 0 {
+		return "", fmt.Errorf("email issue")
 	}
-	return nil
+	user := users[0]
+	if err := ComparePassword(user.Password, password); err != nil {
+		return "", err
+	}
+	token, err := GenerateJWTToken(user.UserId, user.UserName)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
 }
 
 func GenerateUserID() string {
@@ -51,4 +78,33 @@ func GenerateHashPassword(pass string) (string, error) {
 func ComparePassword(hashedPass, pass string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(pass))
 	return err
+}
+
+var secrete string = "secret key"
+
+func GenerateJWTToken(userId, username string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":      userId,
+		"username": username,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte(secrete))
+	return tokenString, err
+}
+
+func ValidateJWTToken(tokenString string) error {
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		return secrete, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if !token.Valid {
+		return fmt.Errorf("token is invalid")
+	}
+
+	return nil
 }
