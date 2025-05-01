@@ -17,6 +17,7 @@ func main() {
 	e := echo.New()
 	e.POST("/api/signup", handler.SignUp)
 	e.POST("/api/signin", handler.SignIn)
+	e.POST("/api/refresh", handler.Refersh)
 	e.Logger.Fatal(e.Start(":8080"))
 
 }
