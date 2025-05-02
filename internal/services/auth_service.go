@@ -4,34 +4,24 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Pratam-Kalligudda/pardon-my-francias-bk/internal/repo"
 	"github.com/Pratam-Kalligudda/pardon-my-francias-bk/models"
 )
-
-type Service struct {
-	Repo *repo.Repo
-}
-
-func NewService(repo *repo.Repo) Service {
-	return Service{repo}
-}
 
 var secrete string = "secret key"
 var accessTokenDuration time.Duration = 24 * time.Hour
 var refershTokenDuration time.Duration = 7 * 24 * time.Hour
 
-func (s Service) CreateUser(user *models.User) (string, string, error) {
-	users := s.Repo.GetUser("email", user.Email)
-	if len(users) != 0 {
-		return "", "", fmt.Errorf("email already exists")
+func (s *Service) CreateUser(user *models.User) (string, string, error) {
+	err := s.Repo.CheckIfUserExists("email", user.Email)
+	if err != nil {
+		return "", "", fmt.Errorf("email already exists : %v ", err)
 	}
-	users = nil
-	users = s.Repo.GetUser("user_name", user.UserName)
-	if len(users) != 0 {
-		return "", "", fmt.Errorf("username already exists")
+	err = s.Repo.CheckIfUserExists("user_name", user.UserName)
+	if err != nil {
+		return "", "", fmt.Errorf("username already exists : %v ", err)
 	}
-	user.UserId = GenerateUserID()
-	hashPass, err := GenerateHashPassword(user.Password)
+
+	hashPass, err := generateHashPassword(user.Password)
 	if err != nil {
 		return "", "", err
 	}
@@ -39,12 +29,12 @@ func (s Service) CreateUser(user *models.User) (string, string, error) {
 
 	s.Repo.AddUser(*user)
 
-	accessToken, err := GenerateJWTToken(user.UserId, accessTokenDuration)
+	accessToken, err := generateJWTToken(user.UserId, accessTokenDuration)
 	if err != nil {
 		return "", "", err
 	}
 
-	refershToken, err := GenerateJWTToken(user.UserId, refershTokenDuration)
+	refershToken, err := generateJWTToken(user.UserId, refershTokenDuration)
 	if err != nil {
 		return "", "", err
 	}
@@ -52,29 +42,31 @@ func (s Service) CreateUser(user *models.User) (string, string, error) {
 	return accessToken, refershToken, nil
 }
 
-func (s Service) LoginUser(email, password string) (string, string, error) {
-	users := s.Repo.GetUser("email", email)
-	if len(users) > 1 || len(users) == 0 {
-		return "", "", fmt.Errorf("email issue")
-	}
-	if err := ComparePassword(users[0].Password, password); err != nil {
-		return "", "", err
+func (s *Service) LoginUser(email, password string) (string, string, error) {
+	user, err := s.Repo.GetUserWhere("email", email)
+	if err != nil {
+		return "", "", fmt.Errorf("incorrect email or password : %v", err)
 	}
 
-	accessToken, err := GenerateJWTToken(users[0].UserId, accessTokenDuration)
+	if err := comparePassword(user.Password, password); err != nil {
+		return "", "", fmt.Errorf("incorrect email or password : %v", err)
+	}
+
+	accessToken, err := generateJWTToken(user.UserId, accessTokenDuration)
 	if err != nil {
 		return "", "", err
 	}
 
-	refershToken, err := GenerateJWTToken(users[0].UserId, refershTokenDuration)
+	refershToken, err := generateJWTToken(user.UserId, refershTokenDuration)
 	if err != nil {
 		return "", "", err
 	}
+
 	return accessToken, refershToken, nil
 }
 
 func (s *Service) RefershToken(token string) (accessToken string, err error) {
-	claims, err := ValidateJWTToken(token)
+	claims, err := validateJWTToken(token)
 	if err != nil {
 		return "", err
 	}
@@ -82,10 +74,9 @@ func (s *Service) RefershToken(token string) (accessToken string, err error) {
 	userId, err := claims.GetSubject()
 	if err != nil {
 		return "", err
-
 	}
 
-	accessToken, err = GenerateJWTToken(userId, accessTokenDuration)
+	accessToken, err = generateJWTToken(userId, accessTokenDuration)
 	if err != nil {
 		return "", err
 	}

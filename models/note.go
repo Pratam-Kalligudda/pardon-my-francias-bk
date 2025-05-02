@@ -18,8 +18,8 @@ type Note struct {
 	User      User      `gorm:"foreignKey:UserID;references:UserId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 	Title     string    `gorm:"type:varchar(255);not null" json:"title,omitempty"`
 	Content   string    `gorm:"type:text;not null" json:"content,omitempty"`
-	Tags      []string  `gorm:"type:text[]" json:"tags,omitempty"`
-	Priority  Priority  `gorm:"type:int;default:0" json:"priority,omitempty"`
+	Tags      []*string `gorm:"type:text[]" json:"tags,omitempty"`
+	Priority  *Priority `gorm:"type:int;default:0" json:"priority,omitempty"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at,omitempty"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at,omitempty"`
 }

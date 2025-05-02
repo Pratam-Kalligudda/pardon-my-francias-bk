@@ -4,20 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Pratam-Kalligudda/pardon-my-francias-bk/internal/services"
 	"github.com/Pratam-Kalligudda/pardon-my-francias-bk/models"
 	"github.com/labstack/echo/v4"
 )
 
 type JSON map[string]string
-
-type Handler struct {
-	service *services.Service
-}
-
-func NewHandler(service *services.Service) Handler {
-	return Handler{service}
-}
 
 func (h *Handler) SignUp(c echo.Context) error {
 	user := new(models.User)
@@ -85,4 +76,24 @@ func (h *Handler) Refersh(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, JSON{"message": "Logged in Successfully", "access_token": accessToken})
 
+}
+
+func (h *Handler) SignOut(c echo.Context) error {
+	_, err := c.Cookie("refresh_token")
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, JSON{"error": "No refresh token found : " + err.Error()})
+	}
+
+	c.SetCookie(&http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		MaxAge:   -1,
+		Secure:   false,
+		SameSite: http.SameSiteDefaultMode,
+		Path:     "/api/",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: false,
+	})
+	return c.JSON(http.StatusOK, JSON{"message": "Logged out successfuly"})
 }

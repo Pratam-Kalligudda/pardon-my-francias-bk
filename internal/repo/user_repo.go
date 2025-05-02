@@ -1,32 +1,28 @@
 package repo
 
 import (
-	"fmt"
-
 	"github.com/Pratam-Kalligudda/pardon-my-francias-bk/models"
-	"gorm.io/gorm"
 )
 
-type Repo struct {
-	DB *gorm.DB
+func (r *Repo) AddUser(user models.User) (*models.User, error) {
+	tx := r.DB.Create(&user)
+	return &user, tx.Error
 }
 
-func NewRepo(db *gorm.DB) Repo {
-	return Repo{db}
+func (r *Repo) CheckIfUserExists(keyword string, value string) error {
+	var user models.User
+	tx := r.DB.First(&user, keyword+" = ?", value)
+	return tx.Error
 }
 
-func (r *Repo) AddUser(user models.User) {
-	r.DB.Create(&user)
+func (r *Repo) GetUserWhere(keyword string, value string) (*models.User, error) {
+	var user models.User
+	tx := r.DB.First(&user, keyword+" = ?", value)
+	return &user, tx.Error
+}
+
+func (r *Repo) GetAllUser() ([]models.User, error) {
 	var users []models.User
-	r.DB.Find(&users)
-	fmt.Println("Get Users:", users)
-}
-
-func (r *Repo) GetUser(keyword string, value string) []models.User {
-	var users []models.User
-	r.DB.Find(&users, keyword, value)
-	if len(users) == 0 {
-		return nil
-	}
-	return users
+	tx := r.DB.Find(&users)
+	return users, tx.Error
 }
