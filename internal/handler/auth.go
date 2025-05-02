@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -8,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type JSON map[string]string
+type JSON map[string]any
 
 func (h *Handler) SignUp(c echo.Context) error {
 	user := new(models.User)
@@ -18,6 +20,10 @@ func (h *Handler) SignUp(c echo.Context) error {
 	}
 
 	accessToken, refershToken, err := h.service.CreateUser(user)
+
+	jsonPtr, _ := json.MarshalIndent(user, "", "\t")
+	fmt.Print(string(jsonPtr))
+
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, JSON{"error": err.Error()})
 	}
@@ -59,7 +65,7 @@ func (h *Handler) SignIn(c echo.Context) error {
 
 	c.SetCookie(cookie)
 
-	return c.JSON(http.StatusOK, JSON{"message": "Logged in Successfully", "access_token": accessToken})
+	return c.JSON(http.StatusOK, JSON{"message": "Logged in Successfully", "token": accessToken})
 }
 
 func (h *Handler) Refersh(c echo.Context) error {
@@ -74,7 +80,7 @@ func (h *Handler) Refersh(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, JSON{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, JSON{"message": "Logged in Successfully", "access_token": accessToken})
+	return c.JSON(http.StatusOK, JSON{"message": "Logged in Successfully", "token": accessToken})
 
 }
 

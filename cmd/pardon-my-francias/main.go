@@ -28,6 +28,9 @@ func main() {
 	e.POST("/api/signin", handler.SignIn)
 	e.POST("/api/refresh", handler.Refersh)
 	e.POST("/api/signout", handler.SignOut)
+	e.POST("/api/addnote", handler.AddNote)
+
+	e.GET("/api/getnotes", handler.GetNotesOfUser)
 	e.Logger.Fatal(e.Start(port))
 
 }

@@ -12,6 +12,8 @@ type CustomClaims struct {
 	jwt.RegisteredClaims
 }
 
+var secrete string = "secret key"
+
 func generateHashPassword(pass string) (string, error) {
 	hashedPass, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {

@@ -7,17 +7,16 @@ import (
 	"github.com/Pratam-Kalligudda/pardon-my-francias-bk/models"
 )
 
-var secrete string = "secret key"
 var accessTokenDuration time.Duration = 24 * time.Hour
 var refershTokenDuration time.Duration = 7 * 24 * time.Hour
 
 func (s *Service) CreateUser(user *models.User) (string, string, error) {
 	err := s.Repo.CheckIfUserExists("email", user.Email)
-	if err != nil {
+	if err == nil {
 		return "", "", fmt.Errorf("email already exists : %v ", err)
 	}
 	err = s.Repo.CheckIfUserExists("user_name", user.UserName)
-	if err != nil {
+	if err == nil {
 		return "", "", fmt.Errorf("username already exists : %v ", err)
 	}
 
@@ -27,7 +26,7 @@ func (s *Service) CreateUser(user *models.User) (string, string, error) {
 	}
 	user.Password = hashPass
 
-	s.Repo.AddUser(*user)
+	s.Repo.AddUser(user)
 
 	accessToken, err := generateJWTToken(user.UserId, accessTokenDuration)
 	if err != nil {

@@ -4,15 +4,13 @@ import (
 	"github.com/Pratam-Kalligudda/pardon-my-francias-bk/models"
 )
 
-func (r *Repo) AddUser(user models.User) (*models.User, error) {
-	tx := r.DB.Create(&user)
-	return &user, tx.Error
+func (r *Repo) AddUser(user *models.User) error {
+	return r.DB.Create(user).Error
 }
 
 func (r *Repo) CheckIfUserExists(keyword string, value string) error {
 	var user models.User
-	tx := r.DB.First(&user, keyword+" = ?", value)
-	return tx.Error
+	return r.DB.First(&user, keyword+" = ?", value).Error
 }
 
 func (r *Repo) GetUserWhere(keyword string, value string) (*models.User, error) {
